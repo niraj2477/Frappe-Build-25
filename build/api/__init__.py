@@ -12,8 +12,19 @@ from .employee import (
 
 now = nowdate()
 
+# http://build.localhost/api/method/build.api.get?employee=HR-EMP-00001
 
 @frappe.whitelist()
+def get(employee: str, start_date=now, max_week: int = 4):
+    from time import time
+
+    start_time = time()
+    res = get_timesheet_data(employee, start_date, max_week)
+    end_time = time()
+    res["time"] = f"{end_time - start_time} seconds"
+    return res
+
+
 def get_timesheet_data(employee: str, start_date=now, max_week: int = 4):
     """Get timesheet data for the given employee for the given number of weeks."""
     if not employee:
@@ -26,9 +37,8 @@ def get_timesheet_data(employee: str, start_date=now, max_week: int = 4):
         daily_norm = get_employee_daily_working_norm()
         for i in range(max_week):
             week_dates = get_week_dates(start_date)
-            cache_key = (
-                f'{week_dates.get("start_date")}-{week_dates.get("end_date")}',
-            )
+            cache_key = f'{week_dates.get("start_date")}-{week_dates.get("end_date")}'
+
             week_key = week_dates["key"]
 
             cached_data = frappe.cache.hget(f"timesheet:{employee}", cache_key)
